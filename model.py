@@ -40,7 +40,8 @@ def retrieval_qa_chain(llm, prompt, db):
 def load_llm():
     # Load the locally downloaded model here
     llm = CTransformers(
-        model = "TheBloke/Llama-2-7B-Chat-GGML",
+        # model = "TheBloke/Llama-2-7B-Chat-GGML",
+        model = "llama-2-7b-chat.ggmlv3.q8_0.bin",
         model_type="llama",
         max_new_tokens = 512,
         temperature = 0.5
@@ -78,13 +79,15 @@ async def start():
 @cl.on_message
 async def main(message: cl.Message):
     chain = cl.user_session.get("chain") 
-    cb = cl.AsyncLangchainCallbackHandler(
-        stream_final_answer=True, answer_prefix_tokens=["FINAL", "ANSWER"]
-    )
-    cb.answer_reached = True
-    res = await chain.acall(message.content, callbacks=[cb])
-    answer = res["result"]
+    # cb = cl.AsyncLangchainCallbackHandler(
+    #     stream_final_answer=True, answer_prefix_tokens=["FINAL", "ANSWER"]
+    # )
+    # cb.answer_reached = True
+    # res = await chain.acall(message.content, callbacks=[cb])
+    res = await chain.acall(message.content)
+    answer = res["answer"]
     sources = res["source_documents"]
+    # print(answer)
 
     if sources:
         answer += f"\nSources:" + str(sources)
@@ -92,3 +95,9 @@ async def main(message: cl.Message):
         answer += "\nNo sources found"
 
     await cl.Message(content=answer).send()
+
+
+
+@cl.on_chat_end
+def on_chat_end():
+    print("The user disconnected!")
